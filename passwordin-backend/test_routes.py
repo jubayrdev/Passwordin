@@ -3,7 +3,6 @@ from src.app import app
 from src.models import User, Category, Password,db
 from werkzeug.security import generate_password_hash
 
-base_url = "http://127.0.0.1:5000"
 def register(client, username, password):
     data = {
         'username': username,
@@ -38,11 +37,11 @@ def create_password(client, name, email, password, notes, category_id, token):
     headers = {
         'Authorization': f'Bearer {token}'
     }
-    return client.post(f'{base_url}/passwords', json=data, headers=headers)
+    return client.post(f'passwords', json=data, headers=headers)
 
 def test_index():
     client = app.test_client()
-    response = client.get(f'{base_url}/')
+    response = client.get(f'/')
     assert response.status_code == 200
     assert b'Ohkay' in response.data
 
