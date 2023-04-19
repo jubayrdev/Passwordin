@@ -25,7 +25,7 @@ def create_category(client, name, token):
     headers = {
         'Authorization': f'Bearer {token}'
     }
-    return client.post(f'{base_url}/categories', json=data, headers=headers)
+    return client.post(f'categories', json=data, headers=headers)
 
 def create_password(client, name, email, password, notes, category_id, token):
     data = {
@@ -73,53 +73,59 @@ def test_register_login():
     assert response.status_code == 400
     assert json.loads(response.data)['message'] == 'Password should be at least 6 characters long and contain at least one letter, one number, and one special character'
 
-# def test_create_category():
-#     with app.app_context():
-#         db.drop_all()
-#         db.create_all()
+def test_create_category():
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
 
-#         user = User(username='testuser', password=generate_password_hash('testpassword', method='sha256'))
-#         db.session.add(user)
-#         db.session.commit()
+        user = User(username='testuser', password=generate_password_hash('valid123#', method='sha256'))
+        db.session.add(user)
+        db.session.commit()
 
-#         access_token = user.get_access_token()
-
-#     client = app.test_client()
+    client = app.test_client()
 
     # Test creating a category with a valid access token
+    response = login(client,"testuser","valid123#")
+    access_token = json.loads(response.data)['access_token']
     response = create_category(client, 'Test Category', access_token)
     assert response.status_code == 201
     assert json.loads(response.data)['message'] == 'Category created successfully.'
 
     # Test creating a category with an invalid access token
     response = create_category(client, 'Test Category', 'invalidtoken')
-    assert response.status_code == 401
-    assert json.loads(response.data)['msg'] == 'Invalid token'
+    assert response.status_code == 422
+    assert json.loads(response.data)['msg'] == 'Not enough segments'
 
-# def test_create_password():
-#     with app.app_context():
-#         db.drop_all()
-#         db.create_all()
+def test_create_password():
+    client = app.test_client()
 
-#         user = User(username='testuser', password=generate_password_hash('testpassword', method='sha256'))
-#         db.session.add(user)
-#         db.session.commit()
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
 
-#         category = Category(name='Test Category')
-#         db.session.add(category)
-#         db.session.commit()
+        user = User(username='testuser', password=generate_password_hash('valid123#', method='sha256'))
+        db.session.add(user)
+        db.session.commit()
 
-#         access_token = user.get_access_token()
+        category = Category(name='Test Category')
+        db.session.add(category)
+        db.session.commit()
 
-#     client = app.test_client()
 
-#     # Test creating a password with a valid access token and valid category ID
-#     # Test creating a password with an invalid access token
-#     response = create_password(client, 'Test Password', 'test@example.com', 'testpassword', 'Test Notes', 1, 'invalidtoken')
-#     assert response.status_code == 401
-#     assert json.loads(response.data)['msg'] == 'Invalid token'
+    client = app.test_client()
+    response = login(client,"testuser","valid123#")
+    access_token = json.loads(response.data)['access_token']
 
-#     # Test creating a password with an invalid category ID
-#     response = create_password(client, 'Test Password', 'test@example.com', 'testpassword', 'Test Notes', 2, access_token)
-#     assert response.status_code == 400
-#     assert json.loads(response.data)['msg'] == 'Invalid category ID'
+    # Test creating a password with a valid access token and valid category ID
+    response = create_password(client, 'Test Password', 'test@example.com', 'testpassword', 'Test Notes', 1, access_token)
+    assert response.status_code == 201
+    assert json.loads(response.data)['message'] == "Password created successfully."
+    # Test creating a password with an invalid access token
+    response = create_password(client, 'Test Password', 'test@example.com', 'testpassword', 'Test Notes', 1, 'invalidtoken')
+    assert response.status_code == 422
+    assert json.loads(response.data)['msg'] == 'Not enough segments'
+
+    # # Test creating a password with an invalid category ID
+    # response = create_password(client, 'Test Password', 'test@example.com', 'testpassword', 'Test Notes', 2, access_token)
+    # assert response.status_code == 400
+    # assert json.loads(response.data)['msg'] == 'Invalid category ID'
